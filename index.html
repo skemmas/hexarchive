@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HexArchive</title>
+
+<style>
+:root{
+    --bg:#050505;
+    --panel:#0d0d0d;
+    --green:#8dff87;
+    --green2:#2fff7a;
+    --text:#d5ffd8;
+    --muted:#6b8f71;
+    --danger:#ff5f7a;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:monospace;
+    overflow-x:hidden;
+    cursor:crosshair;
+}
+
+::selection{
+    background:var(--green);
+    color:#000;
+}
+
+.bg-grid{
+    position:fixed;
+    inset:0;
+    background:
+    linear-gradient(rgba(141,255,135,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(141,255,135,.05) 1px, transparent 1px);
+    background-size:40px 40px;
+    animation:gridMove 20s linear infinite;
+    pointer-events:none;
+    z-index:-5;
+}
+
+@keyframes gridMove{
+    from{
+        transform:translateY(0px);
+    }
+    to{
+        transform:translateY(40px);
+    }
+}
+
+.noise{
+    position:fixed;
+    inset:0;
+    opacity:.05;
+    background-image:
+    radial-gradient(circle at 20% 20%, white 1px, transparent 1px),
+    radial-gradient(circle at 80% 80%, white 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, white 1px, transparent 1px);
+    background-size:120px 120px;
+    animation:flicker .2s infinite;
+    pointer-events:none;
+    z-index:-4;
+}
+
+@keyframes flicker{
+    0%{opacity:.04;}
+    50%{opacity:.07;}
+    100%{opacity:.03;}
+}
+
+.scanline{
+    position:fixed;
+    inset:0;
+    background:linear-gradient(
+    transparent 0%,
+    rgba(141,255,135,.04) 50%,
+    transparent 100%);
+    background-size:100% 6px;
+    pointer-events:none;
+    animation:scan 10s linear infinite;
+    z-index:-3;
+}
+
+@keyframes scan{
+    from{
+        transform:translateY(-100%);
+    }
+    to{
+        transform:translateY(100%);
+    }
+}
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:6vw;
+    position:relative;
+}
+
+.archive-tag{
+    color:var(--muted);
+    font-size:.8rem;
+    margin-bottom:20px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+}
+
+.hero h1{
+    font-size:clamp(4rem,12vw,10rem);
+    line-height:.9;
+    text-transform:uppercase;
+    color:var(--green);
+    text-shadow:
+    0 0 10px rgba(141,255,135,.7),
+    0 0 40px rgba(141,255,135,.2);
+    position:relative;
+    display:inline-block;
+}
+
+.hero h1::before{
+    content:"HEXARCHIVE";
+    position:absolute;
+    left:4px;
+    top:2px;
+    color:#ff0048;
+    opacity:.4;
+    z-index:-1;
+}
+
+.hero h1::after{
+    content:"HEXARCHIVE";
+    position:absolute;
+    left:-4px;
+    top:-2px;
+    color:#00f7ff;
+    opacity:.4;
+    z-index:-1;
+}
+
+.subtitle{
+    margin-top:20px;
+    max-width:700px;
+    color:#b8dabb;
+    font-size:1.1rem;
+    line-height:1.7;
+}
+
+.hero-box{
+    margin-top:40px;
+    border:1px solid rgba(141,255,135,.2);
+    background:rgba(0,0,0,.5);
+    padding:24px;
+    width:min(700px,100%);
+    position:relative;
+    overflow:hidden;
+}
+
+.hero-box::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+    linear-gradient(90deg,
+    transparent,
+    rgba(141,255,135,.08),
+    transparent);
+    animation:sweep 4s linear infinite;
+}
+
+@keyframes sweep{
+    from{
+        transform:translateX(-100%);
+    }
+    to{
+        transform:translateX(100%);
+    }
+}
+
+.ca-label{
+    color:var(--muted);
+    font-size:.75rem;
+    margin-bottom:10px;
+    letter-spacing:2px;
+}
+
+.ca{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.ca span{
+    word-break:break-all;
+    color:var(--green);
+}
+
+.copy-btn{
+    background:none;
+    border:1px solid var(--green);
+    color:var(--green);
+    padding:10px 18px;
+    font-family:inherit;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.copy-btn:hover{
+    background:var(--green);
+    color:#000;
+    transform:translateY(-2px);
+}
+
+.buttons{
+    display:flex;
+    gap:16px;
+    margin-top:28px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    padding:14px 26px;
+    text-decoration:none;
+    color:#000;
+    background:var(--green);
+    font-weight:bold;
+    position:relative;
+    overflow:hidden;
+    transition:.2s;
+}
+
+.btn:hover{
+    transform:translateY(-4px);
+    box-shadow:0 0 20px rgba(141,255,135,.4);
+}
+
+.btn.alt{
+    background:transparent;
+    color:var(--green);
+    border:1px solid rgba(141,255,135,.3);
+}
+
+.btn.alt:hover{
+    background:rgba(141,255,135,.08);
+}
+
+.section{
+    padding:120px 6vw;
+    position:relative;
+}
+
+.section-title{
+    font-size:2rem;
+    color:var(--green);
+    margin-bottom:40px;
+    text-transform:uppercase;
+    letter-spacing:4px;
+}
+
+.utility-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:20px;
+}
+
+.card{
+    border:1px solid rgba(141,255,135,.15);
+    background:rgba(255,255,255,.015);
+    padding:28px;
+    transition:.25s;
+    position:relative;
+    overflow:hidden;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+    border-color:rgba(141,255,135,.45);
+}
+
+.card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100%;
+    width:100%;
+    height:1px;
+    background:var(--green);
+    animation:lineRun 6s linear infinite;
+}
+
+@keyframes lineRun{
+    from{
+        left:-100%;
+    }
+    to{
+        left:100%;
+    }
+}
+
+.card h3{
+    margin-bottom:16px;
+    color:var(--green);
+}
+
+.card p{
+    line-height:1.7;
+    color:#b2c8b4;
+}
+
+.token-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
+}
+
+.token-box{
+    padding:26px;
+    border-left:2px solid var(--green);
+    background:#090909;
+}
+
+.token-box small{
+    color:var(--muted);
+    display:block;
+    margin-bottom:10px;
+    letter-spacing:2px;
+}
+
+.token-box strong{
+    font-size:1.6rem;
+    color:var(--green);
+}
+
+.roadmap{
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+}
+
+.phase{
+    border:1px solid rgba(141,255,135,.15);
+    padding:30px;
+    position:relative;
+    background:rgba(255,255,255,.01);
+}
+
+.phase::before{
+    content:"//";
+    position:absolute;
+    right:20px;
+    top:20px;
+    color:rgba(141,255,135,.2);
+    font-size:2rem;
+}
+
+.phase h4{
+    color:var(--green);
+    margin-bottom:12px;
+    font-size:1.3rem;
+}
+
+.phase p{
+    color:#b2c8b4;
+    line-height:1.7;
+}
+
+footer{
+    padding:60px 6vw 100px;
+    border-top:1px solid rgba(141,255,135,.1);
+}
+
+.footer-brand{
+    color:var(--green);
+    font-size:2rem;
+    margin-bottom:14px;
+}
+
+.disclaimer{
+    color:#79907b;
+    max-width:700px;
+    line-height:1.7;
+}
+
+.orb{
+    position:absolute;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(141,255,135,.18), transparent 70%);
+    filter:blur(20px);
+    animation:float 8s ease-in-out infinite;
+}
+
+.orb.one{
+    top:10%;
+    right:10%;
+}
+
+.orb.two{
+    bottom:10%;
+    left:0%;
+    animation-delay:2s;
+}
+
+@keyframes float{
+    0%{
+        transform:translateY(0px);
+    }
+    50%{
+        transform:translateY(-20px);
+    }
+    100%{
+        transform:translateY(0px);
+    }
+}
+
+.cursor{
+    width:18px;
+    height:18px;
+    border:1px solid var(--green);
+    position:fixed;
+    pointer-events:none;
+    z-index:9999;
+    transform:translate(-50%,-50%);
+    mix-blend-mode:difference;
+}
+
+@media(max-width:768px){
+
+    .hero{
+        padding-top:120px;
+    }
+
+    .hero h1{
+        font-size:4rem;
+    }
+
+    .section{
+        padding:90px 6vw;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-grid"></div>
+<div class="noise"></div>
+<div class="scanline"></div>
+<div class="cursor"></div>
+
+<div class="orb one"></div>
+<div class="orb two"></div>
+
+<section class="hero">
+
+<div class="archive-tag">
+ENCRYPTED MEMETIC STORAGE NODE
+</div>
+
+<h1>HEXARCHIVE</h1>
+
+<p class="subtitle">
+A corrupted Solana archive preserving lost wallet lore deleted rugpulls and forbidden chain artifacts.
+</p>
+
+<div class="hero-box">
+
+<div class="ca-label">
+CONTRACT ADDRESS
+</div>
+
+<div class="ca">
+<span id="caText">COMING_SOON_ARCHIVE_NODE_PENDING</span>
+<button class="copy-btn" id="copyBtn">COPY</button>
+</div>
+
+<div class="buttons">
+<a href="#" class="btn">BUY ARCHIVE</a>
+<a href="#" class="btn alt">TELEGRAM</a>
+<a href="#" class="btn alt">X / TWITTER</a>
+</div>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<h2 class="section-title">
+Archive Utility
+</h2>
+
+<div class="utility-grid">
+
+<div class="card">
+<h3>LOST TRANSACTIONS</h3>
+<p>
+HexArchive indexes forgotten chain events fake CTO wars deleted calls and cursed wallet movements into one memetic vault.
+</p>
+</div>
+
+<div class="card">
+<h3>WALLET GHOSTS</h3>
+<p>
+Every holder becomes part of the archive. Wallets generate classified threat levels based on chain behavior.
+</p>
+</div>
+
+<div class="card">
+<h3>BLACK FILES</h3>
+<p>
+Fake leaks redacted screenshots and chain conspiracies continuously mutate across the ecosystem.
+</p>
+</div>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<h2 class="section-title">
+Tokenomics
+</h2>
+
+<div class="token-grid">
+
+<div class="token-box">
+<small>TOTAL SUPPLY</small>
+<strong>1B</strong>
+</div>
+
+<div class="token-box">
+<small>LIQUIDITY</small>
+<strong>BURNED</strong>
+</div>
+
+<div class="token-box">
+<small>TAX</small>
+<strong>0/0</strong>
+</div>
+
+<div class="token-box">
+<small>COMMUNITY</small>
+<strong>100%</strong>
+</div>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<h2 class="section-title">
+Roadmap
+</h2>
+
+<div class="roadmap">
+
+<div class="phase">
+<h4>PHASE 01 — FILE RECOVERY</h4>
+<p>
+Deploy archive node spread leaked screenshots infect crypto timelines.
+</p>
+</div>
+
+<div class="phase">
+<h4>PHASE 02 — WALLET SURVEILLANCE</h4>
+<p>
+Track meme cult movements generate classified chain reports unlock holder badges.
+</p>
+</div>
+
+<div class="phase">
+<h4>PHASE 03 — THE HEX VAULT</h4>
+<p>
+Full corrupted archive experience with hidden chain files fake intelligence drops and terminal events.
+</p>
+</div>
+
+</div>
+
+</section>
+
+<footer>
+
+<div class="footer-brand">
+HEXARCHIVE
+</div>
+
+<p class="disclaimer">
+HexArchive is a memecoin created for entertainment internet culture and speculative chaos. Nothing inside the archive should be treated as financial advice classified intelligence or reality.
+</p>
+
+</footer>
+
+<script>
+const cursor = document.querySelector('.cursor');
+
+window.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+});
+
+const copyBtn = document.getElementById('copyBtn');
+
+copyBtn.addEventListener('click', () => {
+    const text = document.getElementById('caText').innerText;
+    navigator.clipboard.writeText(text);
+
+    copyBtn.innerText = 'ARCHIVED';
+
+    setTimeout(() => {
+        copyBtn.innerText = 'COPY';
+    }, 1500);
+});
+
+const cards = document.querySelectorAll('.card');
+
+cards.forEach(card => {
+    card.addEventListener('mousemove', e => {
+
+        const rect = card.getBoundingClientRect();
+
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        card.style.background = `
+        radial-gradient(
+        circle at ${x}px ${y}px,
+        rgba(141,255,135,.12),
+        rgba(255,255,255,.01) 40%
+        )`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+        card.style.background = 'rgba(255,255,255,.015)';
+    });
+});
+
+setInterval(() => {
+
+    const chars = "01ABCDEF";
+
+    let randomText = "";
+
+    for(let i = 0; i < 12; i++){
+        randomText += chars[Math.floor(Math.random() * chars.length)];
+    }
+
+    document.title = randomText + " // HEXARCHIVE";
+
+}, 2000);
+</script>
+
+</body>
+</html>
